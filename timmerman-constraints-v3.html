@@ -1,0 +1,1070 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+<title>Timmerman · Contraintes OAR — SABR/SRS</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+/* ── RESET ── */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --bg:#0d1117;--surface:#161b22;--surface2:#1c2330;--surface3:#21262d;
+  --border:#2a3441;--border2:#30363d;
+  --text:#e6edf3;--text2:#8b949e;--text3:#6e7681;
+  --accent:#388bfd;--green:#3fb950;--orange:#f0883e;
+  --red:#f85149;--purple:#a371f7;--yellow:#d29922;
+  --radius:10px;
+}
+body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;font-weight:300;min-height:100vh;font-size:14px;line-height:1.6;}
+
+/* ── HEADER ── */
+header{position:sticky;top:0;z-index:100;background:rgba(13,17,23,0.94);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:0 24px;display:flex;align-items:center;gap:14px;height:56px;}
+.hdr-logo{width:34px;height:34px;border-radius:6px;border:1.5px solid var(--accent);display:flex;align-items:center;justify-content:center;font-family:'DM Mono',monospace;font-size:10px;color:var(--accent);flex-shrink:0;}
+.hdr-title{font-family:'DM Serif Display',serif;font-size:15px;}
+.hdr-sub{font-family:'DM Mono',monospace;font-size:10px;color:var(--text3);margin-top:1px;}
+.hdr-badge{margin-left:auto;font-family:'DM Mono',monospace;font-size:9px;padding:3px 10px;border-radius:20px;background:rgba(56,139,253,.1);border:1px solid rgba(56,139,253,.35);color:var(--accent);white-space:nowrap;}
+
+/* ── LAYOUT ── */
+.container{max-width:960px;margin:0 auto;padding:32px 24px 80px;}
+
+/* ── MODE SWITCH ── */
+
+/* ── SECTION LABEL ── */
+.section-label{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:2px;color:var(--text3);text-transform:uppercase;margin-bottom:12px;}
+
+/* ── STEP CARD ── */
+.step-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:22px 24px;margin-bottom:18px;border-top:3px solid var(--accent);}
+.step-card h2{font-family:'DM Serif Display',serif;font-size:17px;color:var(--text);margin-bottom:16px;}
+
+/* ── PRESET BUTTONS ── */
+.preset-row{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;align-items:center;}
+.preset-label{font-family:'DM Mono',monospace;font-size:10px;color:var(--text3);letter-spacing:1px;text-transform:uppercase;margin-right:4px;}
+.btn-preset{padding:6px 14px;border-radius:20px;border:1px solid var(--border2);background:var(--surface2);cursor:pointer;font-family:'DM Mono',monospace;font-size:11px;color:var(--text2);transition:all .18s;white-space:nowrap;}
+.btn-preset:hover{border-color:var(--accent);color:var(--accent);background:rgba(56,139,253,.06);}
+.btn-preset.hot{border-color:var(--orange);color:var(--orange);background:rgba(240,136,62,.06);}
+.btn-preset.hot:hover{background:rgba(240,136,62,.12);}
+
+/* ── FX GRID ── */
+.fx-grid{display:flex;flex-wrap:wrap;gap:8px;}
+.fx-btn{padding:8px 14px;border-radius:8px;border:1px solid var(--border2);background:var(--surface2);cursor:pointer;font-family:'DM Mono',monospace;font-size:12px;color:var(--text2);transition:all .18s;display:flex;flex-direction:column;align-items:center;gap:2px;min-width:64px;}
+.fx-btn .fx-num{font-size:18px;font-weight:500;color:var(--text);}
+.fx-btn .fx-sub{font-size:9px;color:var(--text3);}
+.fx-btn:hover{border-color:var(--accent);color:var(--text);background:var(--surface3);}
+.fx-btn.selected{border-color:var(--accent);background:rgba(56,139,253,.08);}
+.fx-btn.selected .fx-num{color:var(--accent);}
+
+/* ── REGION GRID ── */
+.region-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;}
+.region-btn{padding:12px 14px;border-radius:8px;border:1px solid var(--border2);background:var(--surface2);cursor:pointer;text-align:left;transition:all .18s;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:400;color:var(--text2);display:flex;flex-direction:column;gap:4px;}
+.region-btn .region-icon{font-size:18px;}
+.region-btn .region-name{font-weight:500;color:var(--text);font-size:13px;}
+.region-btn:hover{border-color:var(--accent);color:var(--text);background:var(--surface3);}
+.region-btn.selected{border-color:var(--accent);background:rgba(56,139,253,.08);}
+
+/* ── OAR LIST ── */
+.oar-controls{display:flex;gap:8px;margin-bottom:10px;align-items:center;}
+.btn-selall{padding:5px 12px;border-radius:6px;border:1px solid var(--border2);background:transparent;color:var(--text2);font-family:'DM Sans',sans-serif;font-size:12px;cursor:pointer;transition:all .18s;}
+.btn-selall:hover{border-color:var(--accent);color:var(--accent);}
+.oar-list{display:flex;flex-direction:column;gap:7px;}
+.oar-item{display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:8px;border:1px solid var(--border2);background:var(--surface2);cursor:pointer;transition:all .18s;}
+.oar-item:hover{border-color:var(--border);background:var(--surface3);}
+.oar-item.checked{border-color:var(--accent);background:rgba(56,139,253,.06);}
+.oar-checkbox{width:16px;height:16px;border-radius:4px;border:1.5px solid var(--border2);flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all .18s;}
+.oar-item.checked .oar-checkbox{background:var(--accent);border-color:var(--accent);}
+.oar-checkbox::after{content:'';display:none;width:8px;height:5px;border-left:1.5px solid #fff;border-bottom:1.5px solid #fff;transform:rotate(-45deg) translateY(-1px);}
+.oar-item.checked .oar-checkbox::after{display:block;}
+.oar-label{flex:1;}
+.oar-name{font-size:13px;font-weight:500;color:var(--text);}
+.oar-sub{font-family:'DM Mono',monospace;font-size:10px;color:var(--text3);margin-top:2px;}
+.tissue-badge{font-family:'DM Mono',monospace;font-size:9px;padding:1px 6px;border-radius:8px;}
+.tissue-serial{color:var(--orange);background:rgba(240,136,62,.1);border:1px solid rgba(240,136,62,.3);}
+.tissue-parallel{color:var(--purple);background:rgba(163,113,247,.1);border:1px solid rgba(163,113,247,.3);}
+.ab-badge{font-family:'DM Mono',monospace;font-size:9px;padding:1px 6px;border-radius:8px;color:var(--yellow);background:rgba(210,153,34,.1);border:1px solid rgba(210,153,34,.3);margin-left:4px;}
+
+/* ── ACTION BTN ── */
+.btn-run{display:inline-flex;align-items:center;gap:8px;padding:11px 24px;border-radius:8px;border:1px solid var(--accent);background:var(--accent);color:#fff;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;cursor:pointer;transition:all .18s;}
+.btn-run:hover{background:#2a7de8;border-color:#2a7de8;}
+.btn-run:disabled{opacity:.4;cursor:not-allowed;}
+.btn-secondary{display:inline-flex;align-items:center;gap:8px;padding:9px 18px;border-radius:8px;border:1px solid var(--border2);background:transparent;color:var(--text2);font-family:'DM Sans',sans-serif;font-size:13px;cursor:pointer;transition:all .18s;}
+.btn-secondary:hover{border-color:var(--border);color:var(--text);}
+.btn-pdf{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:8px;border:1px solid var(--border2);background:transparent;color:var(--text2);font-family:'DM Sans',sans-serif;font-size:12px;cursor:pointer;transition:all .18s;}
+.btn-pdf:hover{border-color:var(--accent);color:var(--accent);}
+.btns-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px;}
+
+/* ── RESULTS HEADER ── */
+#results{display:none;}
+.result-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px;}
+.result-title{font-family:'DM Serif Display',serif;font-size:20px;}
+.result-meta{font-family:'DM Mono',monospace;font-size:10px;color:var(--text3);margin-top:4px;}
+
+/* ── VIEW TOGGLE ── */
+.view-toggle{display:flex;gap:0;border:1px solid var(--border);border-radius:8px;overflow:hidden;}
+.view-btn{padding:7px 14px;cursor:pointer;border:none;background:transparent;color:var(--text2);font-family:'DM Mono',monospace;font-size:11px;transition:all .2s;border-right:1px solid var(--border);}
+.view-btn:last-child{border-right:none;}
+.view-btn.active{background:var(--surface2);color:var(--text);}
+.view-btn:hover:not(.active){background:var(--surface);color:var(--text);}
+
+/* ── TABLE VIEW ── */
+#view-table{display:block;}
+#view-cards{display:none;}
+.table-wrap{overflow-x:auto;border-radius:var(--radius);border:1px solid var(--border);}
+.rtable{width:100%;border-collapse:collapse;min-width:500px;}
+.rtable thead tr{background:var(--surface2);}
+.rtable thead th{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:var(--text3);padding:10px 14px;border-bottom:1px solid var(--border);text-align:left;white-space:nowrap;}
+.rtable thead th.col-fx{text-align:center;border-left:1px solid var(--border);min-width:140px;}
+.rtable thead th .fx-head-sub{font-family:'DM Mono',monospace;font-size:8px;color:var(--text3);display:block;margin-top:2px;font-weight:400;letter-spacing:.5px;}
+.rtable tbody tr{border-bottom:1px solid var(--border);transition:background .12s;}
+.rtable tbody tr:hover{background:var(--surface2);}
+.rtable tbody tr:last-child{border-bottom:none;}
+.rtable tbody td{padding:12px 14px;vertical-align:top;}
+.rtable tbody td.col-fx{border-left:1px solid var(--border);text-align:center;}
+.oar-cell-name{font-weight:500;font-size:13px;}
+.oar-cell-sub{font-family:'DM Mono',monospace;font-size:10px;color:var(--text3);margin-top:2px;}
+/* cellule contrainte */
+.cell-inner{display:flex;flex-direction:column;gap:3px;align-items:center;}
+.cell-line{font-family:'DM Mono',monospace;font-size:11px;color:var(--text);white-space:nowrap;}
+.cell-vol{font-family:'DM Mono',monospace;font-size:9px;color:var(--text3);white-space:nowrap;}
+.cell-eq{font-family:'DM Mono',monospace;font-size:9px;padding:1px 6px;border-radius:6px;background:rgba(63,185,80,.08);border:1px solid rgba(63,185,80,.2);color:var(--green);white-space:nowrap;}
+.cell-nr{font-family:'DM Mono',monospace;font-size:10px;color:var(--text3);font-style:italic;}
+.cell-parallel{background:rgba(163,113,247,.04);}
+/* séparateur vol/dmax dans cellule */
+.cell-sep{width:1px;height:1px;background:var(--border);margin:1px auto;}
+.cell-divider{width:60%;height:1px;background:var(--border2);margin:4px auto;}
+/* multi-volume */
+.cell-multi-row{display:flex;flex-direction:column;gap:2px;align-items:center;}
+
+/* ── CARD VIEW ── */
+.oar-result-card{background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--accent);border-radius:var(--radius);margin-bottom:14px;overflow:hidden;}
+.oar-card-header{padding:14px 18px 12px;border-bottom:1px solid var(--border);display:flex;align-items:flex-start;justify-content:space-between;gap:12px;}
+.oar-card-name{font-weight:600;font-size:14px;}
+.oar-card-sub{font-family:'DM Mono',monospace;font-size:10px;color:var(--text3);margin-top:3px;}
+.oar-card-body{padding:14px 18px;}
+.fx-entry{display:flex;align-items:flex-start;gap:10px;padding:6px 8px;border-radius:6px;background:var(--surface2);margin-bottom:5px;flex-wrap:wrap;}
+.fx-badge{font-family:'DM Mono',monospace;font-size:10px;padding:3px 8px;border-radius:10px;background:rgba(56,139,253,.1);border:1px solid rgba(56,139,253,.3);color:var(--accent);white-space:nowrap;flex-shrink:0;}
+.fx-entry-body{display:flex;flex-direction:column;gap:3px;flex:1;}
+.fx-line{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.fx-dose{font-family:'DM Mono',monospace;font-size:12px;color:var(--text);}
+.fx-vol{font-family:'DM Mono',monospace;font-size:10px;color:var(--text3);}
+.eq-pill{font-family:'DM Mono',monospace;font-size:9px;padding:1px 6px;border-radius:6px;background:rgba(63,185,80,.08);border:1px solid rgba(63,185,80,.2);color:var(--green);white-space:nowrap;}
+.fx-nr{font-family:'DM Mono',monospace;font-size:10px;color:var(--text3);font-style:italic;}
+
+/* ── FOOTNOTE ── */
+.footnote{font-family:'DM Mono',monospace;font-size:10px;color:var(--text3);padding:14px 0;margin-top:8px;border-top:1px solid var(--border);line-height:1.8;}
+.footnote a{color:var(--accent);text-decoration:none;}
+.footnote a:hover{text-decoration:underline;}
+
+/* ── REFS ── */
+.refs-section{margin-top:40px;border-top:1px solid var(--border);padding-top:24px;}
+.refs-title{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--text3);margin-bottom:16px;}
+.ref-item{display:flex;gap:12px;margin-bottom:14px;font-size:12px;}
+.ref-num{font-family:'DM Mono',monospace;font-size:10px;color:var(--text3);min-width:20px;padding-top:2px;}
+.ref-title{color:var(--text);font-weight:500;}
+.ref-journal{color:var(--text2);font-size:11px;margin-top:2px;}
+.ref-doi a{color:var(--accent);font-size:11px;font-family:'DM Mono',monospace;text-decoration:none;}
+.ref-doi a:hover{text-decoration:underline;}
+
+/* ── PRINT ── */
+.print-footer{display:none;}
+@media print{
+  body{background:#fff!important;color:#000!important;font-size:10pt;}
+  header{position:static!important;background:#fff!important;border-bottom:1px solid #ccc!important;}
+  .btn-pdf,.btn-run,.btn-secondary,.step-card,.btns-row,.view-toggle,.preset-row{display:none!important;}
+  .rtable{font-size:8pt;}
+  .table-wrap{border:1px solid #ccc;}
+  .oar-result-card{border:1px solid #ccc!important;background:#fff!important;break-inside:avoid;}
+  .print-footer{display:block;font-size:7pt;color:#999;margin-top:20px;border-top:1px solid #ddd;padding-top:6px;}
+  :root{--text:#000;--text2:#444;--text3:#888;--surface:#fff;--surface2:#f5f5f5;--border:#ddd;--border2:#eee;}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="hdr-logo">TM</div>
+  <div>
+    <div class="hdr-title">Contraintes de dose — Timmerman 2021</div>
+    <div class="hdr-sub">SABR / SRS · 1 à 20 fractions · EQD2 &amp; BED · Source : IJROBP 2022 <a href="https://doi.org/10.1016/j.ijrobp.2021.09.027" target="_blank" style="color:var(--accent);font-family:'DM Mono',monospace;font-size:9px">doi:10.1016/j.ijrobp.2021.09.027</a></div>
+  </div>
+  <span class="hdr-badge">Timmerman 8-2021</span>
+</header>
+
+<div class="container">
+
+  <div class="step-card" id="step-oar-region">
+    <div class="section-label">Étape 1 — Région anatomique</div>
+    <h2>Région anatomique</h2>
+    <div class="region-grid" id="region-grid-oar"></div>
+  </div>
+
+  <div class="step-card" id="step-oar-oars" style="display:none">
+    <div class="section-label">Étape 2 — Organes à risque</div>
+    <h2 id="oar-oars-title">OAR</h2>
+    <div class="oar-controls">
+      <button class="btn-selall" onclick="selectAllOARs('oar-list-oar')">Tout sélectionner</button>
+      <button class="btn-selall" onclick="clearAllOARs('oar-list-oar')">Tout désélectionner</button>
+    </div>
+    <div class="oar-list" id="oar-list-oar"></div>
+  </div>
+
+  <div class="step-card" id="step-oar-fx" style="display:none">
+    <div class="section-label">Étape 3 — Fractionnement(s)</div>
+    <h2>Nombre de fractions</h2>
+    <div class="preset-row">
+      <span class="preset-label">Presets :</span>
+      <button class="btn-preset hot" onclick="applyPreset([1,3,5])">SRS/SBRT · 1–3–5 fx</button>
+      <button class="btn-preset" onclick="applyPreset([1])">SRS · 1 fx</button>
+      <button class="btn-preset" onclick="applyPreset([3])">SBRT · 3 fx</button>
+      <button class="btn-preset" onclick="applyPreset([5])">SBRT · 5 fx</button>
+      <button class="btn-preset" onclick="applyPreset([8])">8 fx</button>
+      <button class="btn-preset" onclick="applyPreset([10,15,20])">Hypofrac · 10–15–20 fx</button>
+    </div>
+    <div class="fx-grid" id="fx-grid-oar"></div>
+    <div class="btns-row">
+      <button class="btn-run" onclick="compute()">Afficher les contraintes →</button>
+    </div>
+  </div>
+
+  <!-- ══ RESULTS ══ -->
+  <div id="results">
+    <div class="result-header">
+      <div>
+        <div class="result-title">Contraintes dosimétriques</div>
+        <div class="result-meta" id="result-meta"></div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:10px;align-items:flex-end">
+        <div class="view-toggle">
+          <button class="view-btn active" id="btn-view-table" onclick="setView('table')">⊞ Tableau</button>
+          <button class="view-btn" id="btn-view-cards" onclick="setView('cards')">☰ Cards</button>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end">
+          <button class="btn-pdf" onclick="printResult()">⬇ Exporter PDF</button>
+          <button class="btn-secondary" onclick="resetAll()">⟳ Nouvelle recherche</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- TABLE VIEW -->
+    <div id="view-table">
+      <div class="table-wrap">
+        <table class="rtable" id="result-table"></table>
+      </div>
+    </div>
+
+    <!-- CARDS VIEW -->
+    <div id="view-cards" style="display:none">
+      <div id="result-cards"></div>
+    </div>
+
+    <!-- FOOTNOTE -->
+    <div class="footnote">
+      <sup>†</sup> "Point" = ≤ 0.035 cm³ pour les tables 1–8 fractions (Dmax). Pour 10–20 fractions, des contraintes volumétriques remplacent le Dmax.<br>
+      <sup>‡</sup> EQD2 = D × (d + α/β) / (2 + α/β) ; BED = D × (1 + d/α/β). α/β = 3 Gy (tissus sains) sauf moelle épinière α/β = 2 Gy. D = dose totale limite, d = D/N.<br>
+      <sup>§</sup> NR = non renseigné dans les tables Timmerman pour ce fractionnement.<br>
+      <sup>‖</sup> Volume critique tissu parallèle = 1/3 du volume natif total (avant résection ou maladie réductrice), si supérieur.<br>
+      Source : Timmerman RD. <em>Int J Radiat Oncol Biol Phys.</em> 2022;112(1):4-21. <a href="https://doi.org/10.1016/j.ijrobp.2021.09.027" target="_blank">doi:10.1016/j.ijrobp.2021.09.027</a>
+    </div>
+
+    <div class="refs-section">
+      <div class="refs-title">Référence</div>
+      <div class="ref-item">
+        <span class="ref-num">[1]</span>
+        <div>
+          <div class="ref-title">Timmerman RD.</div>
+          <div class="ref-journal">A Story of Hypofractionation and the Table on the Wall. <em>Int J Radiat Oncol Biol Phys.</em> 2022;112(1):4-21.</div>
+          <div class="ref-doi"><a href="https://doi.org/10.1016/j.ijrobp.2021.09.027" target="_blank">https://doi.org/10.1016/j.ijrobp.2021.09.027</a></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="print-footer">
+    Outil d'aide à la décision — Ne se substitue pas au jugement clinique ni aux recommandations en vigueur.<br>
+    Généré le <span id="print-date"></span> · Timmerman 8-2021 · SABR/SRS · ronant99-lgtm.github.io
+  </div>
+
+</div><!-- /container -->
+
+<script>
+// ═══════════════════════════════════════════════════════════════════
+// DONNÉES — RÉGIONS ET OARs
+// ═══════════════════════════════════════════════════════════════════
+const REGIONS = [
+  { id:'crane',  label:'Crâne / SNC',  icon:'🧠',
+    oars:['optique','cochlee','tronc','moelle','cauda','sacral_plexus','oeil','cristallin','tm_joint','peau'] },
+  { id:'orl',    label:'Tête & Cou',   icon:'🦷',
+    oars:['optique','cochlee','tronc','moelle','plexus_brachial','trachee','esophage','larynx','peau'] },
+  { id:'thorax', label:'Thorax',        icon:'🫁',
+    oars:['moelle','esophage','plexus_brachial','trachee','bronches_dist','coeur','grands_vx','poumons','cote','peau'] },
+  { id:'abdo',   label:'Abdomen',       icon:'🫀',
+    oars:['moelle','estomac','duodenum','grele','colon','foie','rein','hile_renal','bile','peau'] },
+  { id:'pelvis', label:'Pelvis',         icon:'🦴',
+    oars:['moelle','cauda','sacral_plexus','rectum','colon','grele','vessie','vessie_ant','bulbe_penien','tetes_femorales','uretere','peau'] },
+];
+
+const OAR_DEF = {
+  optique:        {name:'Voie optique',              sub:'Optic pathway — nerf + chiasma',            type:'serial',   ab:3},
+  cochlee:        {name:'Cochlée',                    sub:'Cochlea',                                    type:'serial',   ab:3},
+  tronc:          {name:'Tronc cérébral (sans bulbe)',sub:'Brain stem, not medulla',                   type:'serial',   ab:3},
+  moelle:         {name:'Moelle épinière + bulbe',    sub:'Spinal cord and medulla',                   type:'serial',   ab:2},
+  cauda:          {name:'Queue de cheval',             sub:'Cauda equina',                               type:'serial',   ab:3},
+  sacral_plexus:  {name:'Plexus sacré',               sub:'Sacral plexus',                              type:'serial',   ab:3},
+  plexus_brachial:{name:'Plexus brachial',            sub:'Brachial plexus',                            type:'serial',   ab:3},
+  oeil:           {name:'Œil / Rétine',               sub:'Eye — dose moyenne (tables ≥ 10 fx)',        type:'serial',   ab:3},
+  cristallin:     {name:'Cristallin',                  sub:'Lens — seuil déterministe (tables ≥ 10 fx)',type:'serial',   ab:3},
+  tm_joint:       {name:'Articulation TM',             sub:'TM joint (tables ≥ 10 fx)',                 type:'serial',   ab:3},
+  trachee:        {name:'Trachée + bronche principale',sub:'Trachea and large bronchus ⚠ circ.',       type:'serial',   ab:3},
+  bronches_dist:  {name:'Bronches distales',           sub:'Smaller airways (tables 1–8 fx)',           type:'serial',   ab:3},
+  esophage:       {name:'Œsophage',                    sub:'Esophagus ⚠ éviter irradiation circ.',     type:'serial',   ab:3},
+  larynx:         {name:'Larynx',                      sub:'Larynx — corde vocale (tables ≥ 10 fx)',   type:'serial',   ab:3},
+  coeur:          {name:'Cœur / péricarde',            sub:'Heart / pericardium',                       type:'serial',   ab:3},
+  grands_vx:      {name:'Grands vaisseaux',             sub:'Great vessels',                             type:'serial',   ab:3},
+  poumons:        {name:'Poumons (parallèle)',          sub:'Lung R+L minus GTV — volume critique',     type:'parallel', ab:3},
+  cote:           {name:'Côte',                         sub:'Rib (tables 1–8 fx)',                       type:'serial',   ab:3},
+  peau:           {name:'Peau',                          sub:'Skin — 0.5 cm externe',                    type:'serial',   ab:3},
+  estomac:        {name:'Estomac',                      sub:'Stomach',                                   type:'serial',   ab:3},
+  duodenum:       {name:'Duodénum',                     sub:'Duodenum ⚠ éviter irradiation circ.',      type:'serial',   ab:3},
+  grele:          {name:'Grêle (jéjunum / iléon)',     sub:'Jejunum / ileum',                           type:'serial',   ab:3},
+  colon:          {name:'Côlon',                         sub:'Colon',                                    type:'serial',   ab:3},
+  foie:           {name:'Foie (parallèle)',              sub:'Liver minus GTV — volume critique',        type:'parallel', ab:3},
+  rein:           {name:'Rein cortex (parallèle)',       sub:'Renal cortex R+L — volume critique',      type:'parallel', ab:3},
+  hile_renal:     {name:'Hile rénal / tronc vasc.',     sub:'Renal hilum / vascular trunk',             type:'serial',   ab:3},
+  bile:           {name:'Voie biliaire',                 sub:'Bile duct — Dmax uniquement',              type:'serial',   ab:3},
+  rectum:         {name:'Rectum',                         sub:'Rectum — contraintes multi-volumes',      type:'serial',   ab:3},
+  vessie:         {name:'Vessie',                         sub:'Bladder wall + urine',                    type:'serial',   ab:3},
+  vessie_ant:     {name:'Paroi vésicale ant.',            sub:'Bladder suprapubic wall (tables ≥ 10 fx)',type:'serial',   ab:3},
+  bulbe_penien:   {name:'Bulbe pénien',                  sub:'Penile bulb',                              type:'serial',   ab:3},
+  tetes_femorales:{name:'Têtes fémorales',               sub:'Femoral heads',                            type:'serial',   ab:3},
+  uretere:        {name:'Uretère',                        sub:'Ureter — Dmax (tables 1–8 fx)',           type:'serial',   ab:3},
+};
+
+// ═══════════════════════════════════════════════════════════════════
+// DONNÉES — CONTRAINTES (Timmerman 8-2021, Tables 2–10)
+// volMax:{vol,dose}  dmax:Gy  crit:{vol,dose}  dmean:Gy
+// multi:[{vol,dose}]  note:'NR'|texte  vdose:texte
+// ═══════════════════════════════════════════════════════════════════
+const DATA = {
+  optique:{
+    1:{volMax:{vol:'< 0.2 cm³',dose:8},   dmax:10},
+    2:{volMax:{vol:'< 0.2 cm³',dose:11.7},dmax:13.7},
+    3:{volMax:{vol:'< 0.2 cm³',dose:15.3},dmax:17.4},
+    4:{volMax:{vol:'< 0.2 cm³',dose:19.2},dmax:21.2},
+    5:{volMax:{vol:'< 0.2 cm³',dose:23},  dmax:25},
+    8:{volMax:{vol:'< 0.2 cm³',dose:27.2},dmax:29.6},
+   10:{volMax:{vol:'< 0.5 cm³',dose:30.6},dmax:null},
+   15:{volMax:{vol:'< 0.5 cm³',dose:39},  dmax:null},
+   20:{volMax:{vol:'< 0.5 cm³',dose:42},  dmax:null},
+  },
+  cochlee:{
+    1:{dmax:9},   2:{dmax:11.7}, 3:{dmax:14.4}, 4:{dmax:18},   5:{dmax:22},
+    8:{dmax:26.4},
+   10:{volMax:{vol:'< 0.5 cm³',dose:25},dmax:null},
+   15:{volMax:{vol:'< 0.5 cm³',dose:30},dmax:null},
+   20:{volMax:{vol:'< 0.5 cm³',dose:32},dmax:null},
+  },
+  tronc:{
+    1:{volMax:{vol:'< 0.5 cm³',dose:10}, dmax:15},
+    2:{volMax:{vol:'< 0.5 cm³',dose:13}, dmax:19.1},
+    3:{volMax:{vol:'< 0.5 cm³',dose:15.9},dmax:23.1},
+    4:{volMax:{vol:'< 0.5 cm³',dose:20.8},dmax:27.2},
+    5:{volMax:{vol:'< 0.5 cm³',dose:23}, dmax:31},
+    8:{volMax:{vol:'< 0.5 cm³',dose:27.2},dmax:37.6},
+   10:{volMax:{vol:'< 5 cm³',  dose:32}, dmax:null},
+   15:{volMax:{vol:'< 5 cm³',  dose:40}, dmax:null},
+   20:{volMax:{vol:'< 5 cm³',  dose:44}, dmax:null},
+  },
+  moelle:{
+    1:{volMax:{vol:'< 0.35 cm³',dose:10}, dmax:14},
+    2:{volMax:{vol:'< 0.35 cm³',dose:13}, dmax:18.3},
+    3:{volMax:{vol:'< 0.35 cm³',dose:15.9},dmax:22.5},
+    4:{volMax:{vol:'< 0.35 cm³',dose:18}, dmax:25.6},
+    5:{volMax:{vol:'< 0.35 cm³',dose:22}, dmax:28},
+    8:{volMax:{vol:'< 0.35 cm³',dose:26.4},dmax:33.6},
+   10:{volMax:{vol:'< 5 cm³',   dose:31}, dmax:null},
+   15:{volMax:{vol:'< 5 cm³',   dose:39}, dmax:null},
+   20:{volMax:{vol:'< 5 cm³',   dose:42}, dmax:null},
+  },
+  cauda:{
+    1:{volMax:{vol:'< 5 cm³',dose:14},  dmax:16},
+    2:{volMax:{vol:'< 5 cm³',dose:18},  dmax:20.8},
+    3:{volMax:{vol:'< 5 cm³',dose:21.9},dmax:25.5},
+    4:{volMax:{vol:'< 5 cm³',dose:26},  dmax:28.8},
+    5:{volMax:{vol:'< 5 cm³',dose:30},  dmax:31.5},
+    8:{volMax:{vol:'< 5 cm³',dose:34},  dmax:38.4},
+   10:{volMax:{vol:'< 5 cm³',dose:35},  dmax:null},
+   15:{volMax:{vol:'< 5 cm³',dose:40.5},dmax:null},
+   20:{volMax:{vol:'< 5 cm³',dose:44},  dmax:null},
+  },
+  sacral_plexus:{
+    1:{volMax:{vol:'< 5 cm³',dose:14.4},dmax:16},
+    2:{volMax:{vol:'< 5 cm³',dose:18.5},dmax:20.8},
+    3:{volMax:{vol:'< 5 cm³',dose:22.5},dmax:25.5},
+    4:{volMax:{vol:'< 5 cm³',dose:26},  dmax:28.8},
+    5:{volMax:{vol:'< 5 cm³',dose:30},  dmax:32},
+    8:{volMax:{vol:'< 5 cm³',dose:34},  dmax:38.4},
+   10:{volMax:{vol:'< 5 cm³',dose:35},  dmax:null},
+   15:{volMax:{vol:'< 5 cm³',dose:40.5},dmax:null},
+   20:{volMax:{vol:'< 5 cm³',dose:44},  dmax:null},
+  },
+  plexus_brachial:{
+    1:{volMax:{vol:'< 3 cm³',dose:13.6},dmax:16.4},
+    2:{volMax:{vol:'< 3 cm³',dose:17.8},dmax:21.2},
+    3:{volMax:{vol:'< 3 cm³',dose:22},  dmax:26},
+    4:{volMax:{vol:'< 3 cm³',dose:24.8},dmax:29.6},
+    5:{volMax:{vol:'< 3 cm³',dose:27},  dmax:32.5},
+    8:{volMax:{vol:'< 3 cm³',dose:32.8},dmax:39.2},
+   10:{volMax:{vol:'< 3 cm³',dose:37},  dmax:null},
+   15:{volMax:{vol:'< 3 cm³',dose:48},  dmax:null},
+   20:{volMax:{vol:'< 3 cm³',dose:54},  dmax:null},
+  },
+  oeil:{
+    1:{note:'NR'}, 2:{note:'NR'}, 3:{note:'NR'}, 4:{note:'NR'}, 5:{note:'NR'}, 8:{note:'NR'},
+   10:{dmean:26}, 15:{dmean:33}, 20:{dmean:36},
+  },
+  cristallin:{
+    1:{note:'NR'}, 2:{note:'NR'}, 3:{note:'NR'}, 4:{note:'NR'}, 5:{note:'NR'}, 8:{note:'NR'},
+   10:{note:'Contouré séparément — seuil déterministe < 5 Gy (conventional fractionation)'},
+   15:{note:'Contouré séparément — seuil déterministe < 5 Gy (conventional fractionation)'},
+   20:{note:'Contouré séparément — seuil déterministe < 5 Gy (conventional fractionation)'},
+  },
+  tm_joint:{
+    1:{note:'NR'}, 2:{note:'NR'}, 3:{note:'NR'}, 4:{note:'NR'}, 5:{note:'NR'}, 8:{note:'NR'},
+   10:{volMax:{vol:'< 1 cm³',dose:37.7},dmax:null},
+   15:{volMax:{vol:'< 1 cm³',dose:48},  dmax:null},
+   20:{volMax:{vol:'< 1 cm³',dose:52},  dmax:null},
+  },
+  trachee:{
+    1:{volMax:{vol:'< 4 cm³',dose:27.5},dmax:30},
+    2:{volMax:{vol:'< 4 cm³',dose:34.5},dmax:38},
+    3:{volMax:{vol:'< 5 cm³',dose:39},  dmax:43},
+    4:{volMax:{vol:'< 5 cm³',dose:42.4},dmax:47},
+    5:{volMax:{vol:'< 5 cm³',dose:45},  dmax:50},
+    8:{volMax:{vol:'< 5 cm³',dose:50},  dmax:56},
+   10:{volMax:{vol:'< 5 cm³',dose:52},  dmax:null},
+   15:{volMax:{vol:'< 5 cm³',dose:55.5},dmax:null},
+   20:{volMax:{vol:'< 5 cm³',dose:58},  dmax:null},
+  },
+  bronches_dist:{
+    1:{volMax:{vol:'< 0.5 cm³',dose:17.4},dmax:20.2},
+    2:{volMax:{vol:'< 0.5 cm³',dose:21.6},dmax:25.1},
+    3:{volMax:{vol:'< 0.5 cm³',dose:25.8},dmax:30},
+    4:{volMax:{vol:'< 0.5 cm³',dose:28.8},dmax:34.8},
+    5:{volMax:{vol:'< 0.5 cm³',dose:32},  dmax:40},
+    8:{volMax:{vol:'< 0.5 cm³',dose:38.4},dmax:48.8},
+   10:{note:'NR'}, 15:{note:'NR'}, 20:{note:'NR'},
+  },
+  esophage:{
+    1:{volMax:{vol:'< 5 cm³',dose:20},  dmax:24},
+    2:{volMax:{vol:'< 5 cm³',dose:24.3},dmax:28.3},
+    3:{volMax:{vol:'< 5 cm³',dose:27.9},dmax:32.4},
+    4:{volMax:{vol:'< 5 cm³',dose:30.4},dmax:35.6},
+    5:{volMax:{vol:'< 5 cm³',dose:32.5},dmax:38},
+    8:{volMax:{vol:'< 5 cm³',dose:36.8},dmax:43.2},
+   10:{volMax:{vol:'< 5 cm³',dose:40},  dmax:null},
+   15:{volMax:{vol:'< 5 cm³',dose:45},  dmax:null},
+   20:{volMax:{vol:'< 5 cm³',dose:48},  dmax:null},
+  },
+  larynx:{
+    1:{note:'NR'}, 2:{note:'NR'}, 3:{note:'NR'}, 4:{note:'NR'}, 5:{note:'NR'}, 8:{note:'NR'},
+   10:{volMax:{vol:'< 3 cm³',dose:30},  dmax:null},
+   15:{volMax:{vol:'< 3 cm³',dose:34.5},dmax:null},
+   20:{volMax:{vol:'< 3 cm³',dose:36},  dmax:null},
+  },
+  coeur:{
+    1:{volMax:{vol:'< 15 cm³',dose:16},  dmax:22},
+    2:{volMax:{vol:'< 15 cm³',dose:20},  dmax:26},
+    3:{volMax:{vol:'< 15 cm³',dose:24},  dmax:30},
+    4:{volMax:{vol:'< 15 cm³',dose:28},  dmax:34},
+    5:{volMax:{vol:'< 15 cm³',dose:32},  dmax:38},
+    8:{volMax:{vol:'< 15 cm³',dose:34.4},dmax:40},
+   10:{volMax:{vol:'< 15 cm³',dose:36.6},dmax:null},
+   15:{volMax:{vol:'< 15 cm³',dose:42},  dmax:null},
+   20:{volMax:{vol:'< 15 cm³',dose:46},  dmax:null},
+  },
+  grands_vx:{
+    1:{volMax:{vol:'< 10 cm³',dose:31},  dmax:37},
+    2:{volMax:{vol:'< 10 cm³',dose:35},  dmax:41},
+    3:{volMax:{vol:'< 10 cm³',dose:39},  dmax:45},
+    4:{volMax:{vol:'< 10 cm³',dose:43},  dmax:49},
+    5:{volMax:{vol:'< 10 cm³',dose:47},  dmax:53},
+    8:{volMax:{vol:'< 10 cm³',dose:55.2},dmax:62},
+   10:{volMax:{vol:'< 10 cm³',dose:55.7},dmax:null},
+   15:{volMax:{vol:'< 10 cm³',dose:57},  dmax:null},
+   20:{volMax:{vol:'< 10 cm³',dose:60},  dmax:null},
+  },
+  poumons:{
+    1:{crit:{vol:'≥ 1500 H / 950 F cm³',dose:7.2}, vdose:'V8Gy < 37%'},
+    2:{crit:{vol:'≥ 1500 H / 950 F cm³',dose:9.4}, vdose:'V10Gy < 37%'},
+    3:{crit:{vol:'≥ 1500 H / 950 F cm³',dose:10.8},vdose:'V11.4Gy < 37%'},
+    4:{crit:{vol:'≥ 1500 H / 950 F cm³',dose:12},  vdose:'V12.8Gy < 37%'},
+    5:{crit:{vol:'≥ 1500 H / 950 F cm³',dose:12.5},vdose:'V13.5Gy < 37%'},
+    8:{crit:{vol:'≥ 1500 H / 950 F cm³',dose:14.4},vdose:'V15.2Gy < 37%'},
+   10:{crit:{vol:'≥ 1500 H / 950 F cm³',dose:15},  vdose:'voir table 10 fx'},
+   15:{crit:{vol:'≥ 1500 H / 950 F cm³',dose:16.5},vdose:'voir table 15 fx'},
+   20:{crit:{vol:'≥ 1500 H / 950 F cm³',dose:18},  vdose:'voir table 20 fx'},
+  },
+  cote:{
+    1:{volMax:{vol:'< 5 cm³',dose:28},dmax:33},
+    2:{volMax:{vol:'< 5 cm³',dose:34},dmax:41.5},
+    3:{volMax:{vol:'< 5 cm³',dose:40},dmax:50},
+    4:{volMax:{vol:'< 5 cm³',dose:43},dmax:54},
+    5:{volMax:{vol:'< 5 cm³',dose:45},dmax:57},
+    8:{volMax:{vol:'< 5 cm³',dose:50},dmax:63},
+   10:{note:'NR'}, 15:{note:'NR'}, 20:{note:'NR'},
+  },
+  peau:{
+    1:{volMax:{vol:'< 10 cm³',dose:25.5},dmax:27.5},
+    2:{volMax:{vol:'< 10 cm³',dose:28.3},dmax:30.3},
+    3:{volMax:{vol:'< 10 cm³',dose:31},  dmax:33},
+    4:{volMax:{vol:'< 10 cm³',dose:33.6},dmax:36},
+    5:{volMax:{vol:'< 10 cm³',dose:36.5},dmax:38.5},
+    8:{volMax:{vol:'< 10 cm³',dose:43.2},dmax:45.6},
+   10:{volMax:{vol:'< 10 cm³',dose:46.3},dmax:null},
+   15:{volMax:{vol:'< 10 cm³',dose:54},  dmax:null},
+   20:{volMax:{vol:'< 10 cm³',dose:60},  dmax:null},
+  },
+  estomac:{
+    1:{volMax:{vol:'< 5 cm³', dose:17.4},dmax:22},
+    2:{volMax:{vol:'< 5 cm³', dose:20},  dmax:26},
+    3:{volMax:{vol:'< 5 cm³', dose:22.5},dmax:30},
+    4:{volMax:{vol:'< 5 cm³', dose:25},  dmax:33.2},
+    5:{volMax:{vol:'< 5 cm³', dose:26.5},dmax:35},
+    8:{volMax:{vol:'< 5 cm³', dose:31.2},dmax:42},
+   10:{volMax:{vol:'< 50 cm³',dose:33.9},dmax:null},
+   15:{volMax:{vol:'< 50 cm³',dose:39},  dmax:null},
+   20:{volMax:{vol:'< 50 cm³',dose:42},  dmax:null},
+  },
+  duodenum:{
+    1:{volMax:{vol:'< 5 cm³',dose:17.4},dmax:22},
+    2:{volMax:{vol:'< 5 cm³',dose:20},  dmax:26},
+    3:{volMax:{vol:'< 5 cm³',dose:22.5},dmax:30},
+    4:{volMax:{vol:'< 5 cm³',dose:25},  dmax:33.2},
+    5:{volMax:{vol:'< 5 cm³',dose:26.5},dmax:35},
+    8:{volMax:{vol:'< 5 cm³',dose:31.2},dmax:42},
+   10:{volMax:{vol:'< 5 cm³',dose:33.9},dmax:null},
+   15:{volMax:{vol:'< 5 cm³',dose:39},  dmax:null},
+   20:{volMax:{vol:'< 5 cm³',dose:42},  dmax:null},
+  },
+  grele:{
+    1:{volMax:{vol:'< 30 cm³', dose:17.6},dmax:20},
+    2:{volMax:{vol:'< 30 cm³', dose:19.2},dmax:24},
+    3:{volMax:{vol:'< 30 cm³', dose:20.7},dmax:28.5},
+    4:{volMax:{vol:'< 30 cm³', dose:22.4},dmax:31.6},
+    5:{volMax:{vol:'< 30 cm³', dose:24},  dmax:34.5},
+    8:{volMax:{vol:'< 30 cm³', dose:28.8},dmax:40},
+   10:{volMax:{vol:'< 120 cm³',dose:33.9},dmax:null},
+   15:{volMax:{vol:'< 120 cm³',dose:39},  dmax:null},
+   20:{volMax:{vol:'< 120 cm³',dose:42},  dmax:null},
+  },
+  colon:{
+    1:{volMax:{vol:'< 20 cm³',dose:20.5},dmax:31},
+    2:{volMax:{vol:'< 20 cm³',dose:25.8},dmax:39},
+    3:{volMax:{vol:'< 20 cm³',dose:28.8},dmax:45},
+    4:{volMax:{vol:'< 20 cm³',dose:30.8},dmax:48.5},
+    5:{volMax:{vol:'< 20 cm³',dose:32.5},dmax:52.5},
+    8:{volMax:{vol:'< 20 cm³',dose:35.2},dmax:57.5},
+   10:{volMax:{vol:'< 20 cm³',dose:47},  dmax:null},
+   15:{volMax:{vol:'< 20 cm³',dose:47},  dmax:null},
+   20:{volMax:{vol:'< 20 cm³',dose:50},  dmax:null},
+  },
+  foie:{
+    1:{crit:{vol:'≥ 700 cm³ (natif)',dose:11.6}},
+    2:{crit:{vol:'≥ 700 cm³ (natif)',dose:15.1}},
+    3:{crit:{vol:'≥ 700 cm³ (natif)',dose:17.7}},
+    4:{crit:{vol:'≥ 700 cm³ (natif)',dose:19.6}},
+    5:{crit:{vol:'≥ 700 cm³ (natif)',dose:21.5}},
+    8:{crit:{vol:'≥ 700 cm³ (natif)',dose:24.8}},
+   10:{crit:{vol:'≥ 700 cm³ (natif)',dose:27}},
+   15:{crit:{vol:'≥ 700 cm³ (natif)',dose:30}},
+   20:{crit:{vol:'≥ 700 cm³ (natif)',dose:32}},
+  },
+  rein:{
+    1:{crit:{vol:'≥ 200 cm³ (natif)',dose:9.5}},
+    2:{crit:{vol:'≥ 200 cm³ (natif)',dose:12.5}},
+    3:{crit:{vol:'≥ 200 cm³ (natif)',dose:14.7}},
+    4:{crit:{vol:'≥ 200 cm³ (natif)',dose:16}},
+    5:{crit:{vol:'≥ 200 cm³ (natif)',dose:17.5}},
+    8:{crit:{vol:'≥ 200 cm³ (natif)',dose:20}},
+   10:{crit:{vol:'≥ 200 cm³ (natif)',dose:21}},
+   15:{crit:{vol:'≥ 200 cm³ (natif)',dose:24}},
+   20:{crit:{vol:'≥ 200 cm³ (natif)',dose:26}},
+  },
+  hile_renal:{
+    1:{volMax:{vol:'15 cm³',dose:14},  dmax:null},
+    2:{volMax:{vol:'15 cm³',dose:16.8},dmax:null},
+    3:{volMax:{vol:'15 cm³',dose:19.5},dmax:null},
+    4:{volMax:{vol:'15 cm³',dose:21.5},dmax:null},
+    5:{volMax:{vol:'15 cm³',dose:23},  dmax:null},
+    8:{volMax:{vol:'15 cm³',dose:28},  dmax:null},
+   10:{volMax:{vol:'15 cm³',dose:30.7},dmax:null},
+   15:{volMax:{vol:'15 cm³',dose:37.5},dmax:null},
+   20:{volMax:{vol:'15 cm³',dose:40},  dmax:null},
+  },
+  bile:{
+    1:{dmax:30},  2:{dmax:33},   3:{dmax:36},   4:{dmax:38.4}, 5:{dmax:41},
+    8:{dmax:48},
+   10:{note:'NR'}, 15:{note:'NR'}, 20:{note:'NR'},
+  },
+  rectum:{
+    1:{multi:[{vol:'< 3.5 cm³',dose:30},{vol:'< 20 cm³',dose:23}],dmax:33.7},
+    2:{multi:[{vol:'< 3.5 cm³',dose:38},{vol:'< 20 cm³',dose:26.7}],dmax:41.3},
+    3:{multi:[{vol:'< 3.5 cm³',dose:43},{vol:'< 20 cm³',dose:30.3}],dmax:47},
+    4:{multi:[{vol:'< 3.5 cm³',dose:47.2},{vol:'< 20 cm³',dose:34}],dmax:51.6},
+    5:{multi:[{vol:'< 3.5 cm³',dose:50},{vol:'< 20 cm³',dose:37.5}],dmax:55},
+    8:{multi:[{vol:'< 3.5 cm³',dose:56},{vol:'< 20 cm³',dose:45}],dmax:61.5},
+   10:{multi:[{vol:'< 10 cm³',dose:52},{vol:'< 20 cm³',dose:49},{vol:'< 30 cm³',dose:46},{vol:'< 40 cm³',dose:43}],dmax:null},
+   15:{multi:[{vol:'< 10 cm³',dose:60},{vol:'< 20 cm³',dose:57},{vol:'< 30 cm³',dose:52.5},{vol:'< 40 cm³',dose:49.5}],dmax:null},
+   20:{multi:[{vol:'< 10 cm³',dose:66},{vol:'< 20 cm³',dose:62},{vol:'< 30 cm³',dose:58},{vol:'< 40 cm³',dose:54}],dmax:null},
+  },
+  vessie:{
+    1:{volMax:{vol:'< 15 cm³',dose:12},  dmax:25},
+    2:{volMax:{vol:'< 15 cm³',dose:14.5},dmax:29},
+    3:{volMax:{vol:'< 15 cm³',dose:17},  dmax:33},
+    4:{volMax:{vol:'< 15 cm³',dose:18.5},dmax:35.6},
+    5:{volMax:{vol:'< 15 cm³',dose:20},  dmax:38},
+    8:{volMax:{vol:'< 15 cm³',dose:22.4},dmax:44.8},
+   10:{multi:[{vol:'< 90 cm³',dose:48},{vol:'< 125 cm³',dose:45}],dmax:null},
+   15:{multi:[{vol:'< 90 cm³',dose:55.5},{vol:'< 125 cm³',dose:52.5}],dmax:null},
+   20:{multi:[{vol:'< 90 cm³',dose:60},{vol:'< 125 cm³',dose:56}],dmax:null},
+  },
+  vessie_ant:{
+    1:{note:'NR'}, 2:{note:'NR'}, 3:{note:'NR'}, 4:{note:'NR'}, 5:{note:'NR'}, 8:{note:'NR'},
+   10:{volMax:{vol:'< 5 cm³',dose:23},dmax:null},
+   15:{volMax:{vol:'< 5 cm³',dose:26},dmax:null},
+   20:{volMax:{vol:'< 5 cm³',dose:28},dmax:null},
+  },
+  bulbe_penien:{
+    1:{volMax:{vol:'< 3 cm³',dose:16}},  2:{volMax:{vol:'< 3 cm³',dose:20.5}},
+    3:{volMax:{vol:'< 3 cm³',dose:25}},  4:{volMax:{vol:'< 3 cm³',dose:27}},
+    5:{volMax:{vol:'< 3 cm³',dose:30}},  8:{volMax:{vol:'< 3 cm³',dose:35}},
+   10:{volMax:{vol:'< 3 cm³',dose:38}}, 15:{volMax:{vol:'< 3 cm³',dose:42}},
+   20:{volMax:{vol:'< 3 cm³',dose:44}},
+  },
+  tetes_femorales:{
+    1:{volMax:{vol:'< 10 cm³',dose:15}}, 2:{volMax:{vol:'< 10 cm³',dose:19.5}},
+    3:{volMax:{vol:'< 10 cm³',dose:24}}, 4:{volMax:{vol:'< 10 cm³',dose:27}},
+    5:{volMax:{vol:'< 10 cm³',dose:30}}, 8:{volMax:{vol:'< 10 cm³',dose:35}},
+   10:{volMax:{vol:'< 10 cm³',dose:38}},15:{volMax:{vol:'< 10 cm³',dose:40}},
+   20:{volMax:{vol:'< 10 cm³',dose:44}},
+  },
+  uretere:{
+    1:{dmax:35},  2:{dmax:37.5}, 3:{dmax:40},   4:{dmax:43},   5:{dmax:45},
+    8:{dmax:53},
+   10:{note:'NR'}, 15:{note:'NR'}, 20:{note:'NR'},
+  },
+};
+
+const FX_LIST = [1,2,3,4,5,8,10,15,20];
+
+// ═══════════════════════════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════════════════════════
+let selectedRegion = null;
+let selectedOARs   = new Set();
+let selectedFX     = new Set();
+let currentView    = 'table';
+
+// ═══════════════════════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════════════════════
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('print-date').textContent = new Date().toLocaleDateString('fr-FR');
+  buildRegionGrid('region-grid-oar');
+  buildFxGrid('fx-grid-oar');
+});
+
+// ═══════════════════════════════════════════════════════════════════
+// MODE
+// ═══════════════════════════════════════════════════════════════════
+
+// ═══════════════════════════════════════════════════════════════════
+// BUILD GRIDS
+// ═══════════════════════════════════════════════════════════════════
+function buildRegionGrid(id) {
+  const el = document.getElementById(id);
+  el.innerHTML = '';
+  REGIONS.forEach(r => {
+    const b = document.createElement('button');
+    b.className = 'region-btn'; b.dataset.id = r.id; b.dataset.grid = id;
+    b.innerHTML = `<span class="region-icon">${r.icon}</span><span class="region-name">${r.label}</span>`;
+    b.onclick = () => selectRegion(r.id, id);
+    el.appendChild(b);
+  });
+}
+
+function buildFxGrid(id) {
+  const el = document.getElementById(id);
+  el.innerHTML = '';
+  FX_LIST.forEach(fx => {
+    const b = document.createElement('button');
+    b.className = 'fx-btn'; b.dataset.fx = fx; b.dataset.grid = id;
+    b.innerHTML = `<span class="fx-num">${fx}</span><span class="fx-sub">fraction${fx>1?'s':''}</span>`;
+    b.onclick = () => toggleFx(fx, id);
+    el.appendChild(b);
+  });
+}
+
+function buildOarList(containerId, oarIds) {
+  const el = document.getElementById(containerId);
+  el.innerHTML = '';
+  oarIds.forEach(id => {
+    const def = OAR_DEF[id]; if (!def) return;
+    const item = document.createElement('div');
+    item.className = 'oar-item' + (selectedOARs.has(id) ? ' checked' : '');
+    item.dataset.oar = id; item.dataset.container = containerId;
+    item.innerHTML = `
+      <div class="oar-checkbox"></div>
+      <div class="oar-label">
+        <div class="oar-name">${def.name}${def.ab===2?'<span class="ab-badge">α/β=2</span>':''}</div>
+        <div class="oar-sub">${def.sub}</div>
+      </div>
+      <span class="tissue-badge ${def.type==='parallel'?'tissue-parallel':'tissue-serial'}">${def.type==='parallel'?'parallèle':'série'}</span>`;
+    item.onclick = () => toggleOAR(id, item);
+    el.appendChild(item);
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// INTERACTIONS
+// ═══════════════════════════════════════════════════════════════════
+function selectRegion(id, gridId) {
+  selectedRegion = id;
+  selectedOARs = new Set();
+  document.querySelectorAll('.region-btn').forEach(b =>
+    b.classList.toggle('selected', b.dataset.id===id));
+  const region = REGIONS.find(r => r.id===id);
+  show('step-oar-oars');
+  document.getElementById('oar-oars-title').textContent = `OAR — ${region.icon} ${region.label}`;
+  buildOarList('oar-list-oar', region.oars);
+  hide('step-oar-fx'); hide('results');
+  scrollTo('step-oar-oars');
+}
+
+function toggleFx(fx, gridId) {
+  if (selectedFX.has(fx)) { selectedFX.delete(fx); }
+  else { selectedFX.add(fx); }
+  document.querySelectorAll(`.fx-btn[data-fx="${fx}"]`).forEach(b =>
+    b.classList.toggle('selected', selectedFX.has(fx)));
+  if (selectedOARs.size > 0 && selectedFX.size > 0) { show('step-oar-fx'); }
+  else if (selectedFX.size === 0) { hide('step-oar-fx'); }
+}
+
+function toggleOAR(id, item) {
+  if (selectedOARs.has(id)) { selectedOARs.delete(id); item.classList.remove('checked'); }
+  else { selectedOARs.add(id); item.classList.add('checked'); }
+  if (selectedOARs.size > 0) { show('step-oar-fx'); scrollTo('step-oar-fx'); }
+  else { hide('step-oar-fx'); }
+  hide('results');
+}
+
+function applyPreset(fxArr) {
+  selectedFX = new Set(fxArr);
+  document.querySelectorAll('.fx-btn').forEach(b =>
+    b.classList.toggle('selected', selectedFX.has(parseInt(b.dataset.fx))));
+  if (selectedOARs.size > 0) { show('step-oar-fx'); }
+}
+
+function selectAllOARs(containerId) {
+  const region = REGIONS.find(r => r.id===selectedRegion);
+  if (!region) return;
+  region.oars.forEach(id => selectedOARs.add(id));
+  document.querySelectorAll(`#${containerId} .oar-item`).forEach(el => el.classList.add('checked'));
+  show('step-oar-fx'); scrollTo('step-oar-fx');
+  hide('results');
+}
+
+function clearAllOARs(containerId) {
+  const region = REGIONS.find(r => r.id===selectedRegion);
+  if (!region) return;
+  region.oars.forEach(id => selectedOARs.delete(id));
+  document.querySelectorAll(`#${containerId} .oar-item`).forEach(el => el.classList.remove('checked'));
+  hide('step-oar-fx'); hide('results');
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// CALCULS
+// ═══════════════════════════════════════════════════════════════════
+function eqd2(D, N, ab) {
+  if (!D || !N) return null;
+  const d = D/N;
+  return +(D*(d+ab)/(2+ab)).toFixed(1);
+}
+function bedCalc(D, N, ab) {
+  if (!D || !N) return null;
+  const d = D/N;
+  return +(D*(1+d/ab)).toFixed(1);
+}
+function eqStr(D, N, ab) {
+  const e = eqd2(D,N,ab), b = bedCalc(D,N,ab);
+  return e ? `EQD2 ${e} Gy · BED ${b} Gy` : '';
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// RENDER
+// ═══════════════════════════════════════════════════════════════════
+function compute() {
+  if (!selectedOARs.size || !selectedFX.size) return;
+  const fxArr  = [...selectedFX].sort((a,b)=>a-b);
+  const oarArr = [...selectedOARs];
+
+  const region = REGIONS.find(r=>r.id===selectedRegion);
+  document.getElementById('result-meta').textContent =
+    `${region ? region.icon+' '+region.label+' · ' : ''}${oarArr.length} OAR · ${fxArr.map(f=>f+' fx').join(' / ')} · Timmerman 8-2021 [1]`;
+
+  renderTable(oarArr, fxArr);
+  renderCards(oarArr, fxArr);
+  show('results');
+  setView(currentView);
+  scrollTo('results');
+}
+
+// ── TABLE ──
+function renderTable(oarArr, fxArr) {
+  const tbl = document.getElementById('result-table');
+  tbl.innerHTML = '';
+
+  // HEAD
+  const thead = tbl.createTHead();
+  const hr = thead.insertRow();
+  const thOAR = document.createElement('th');
+  thOAR.textContent = 'OAR'; thOAR.style.width='220px';
+  hr.appendChild(thOAR);
+  fxArr.forEach(fx => {
+    const th = document.createElement('th');
+    th.className = 'col-fx';
+    th.innerHTML = `${fx} fraction${fx>1?'s':''}
+      <span class="fx-head-sub">${fx===1?'SRS':fx<=5?'SBRT':'Hypofrac.'}</span>`;
+    hr.appendChild(th);
+  });
+
+  // BODY
+  const tbody = tbl.createTBody();
+  oarArr.forEach(oarId => {
+    const def = OAR_DEF[oarId];
+    const ab  = def.ab || 3;
+    const tr  = tbody.insertRow();
+    if (def.type==='parallel') tr.classList.add('cell-parallel');
+
+    // OAR name cell
+    const tdName = tr.insertCell();
+    tdName.innerHTML = `
+      <div class="oar-cell-name">${def.name}
+        <span class="tissue-badge ${def.type==='parallel'?'tissue-parallel':'tissue-serial'}" style="font-size:8px">${def.type==='parallel'?'‖':'≡'}</span>
+        ${ab===2?'<span class="ab-badge">α/β=2</span>':''}
+      </div>
+      <div class="oar-cell-sub">${def.sub}</div>`;
+
+    // One cell per fx
+    fxArr.forEach(fx => {
+      const td = tr.insertCell();
+      td.className = 'col-fx';
+      if (def.type==='parallel') td.classList.add('cell-parallel');
+      td.innerHTML = buildCellHTML(oarId, fx, ab);
+    });
+  });
+}
+
+function buildCellHTML(oarId, fx, ab) {
+  const c = DATA[oarId]?.[fx];
+  if (!c) return '<span class="cell-nr">—</span>';
+  if (c.note==='NR') return '<span class="cell-nr">NR<sup style="font-size:7px">§</sup></span>';
+  if (c.note) return `<span class="cell-nr" style="font-size:9px">${c.note}</span>`;
+
+  let html = '<div class="cell-inner">';
+
+  if (c.dmean !== undefined) {
+    const eq = eqStr(c.dmean, fx, ab);
+    html += `<span class="cell-line">Dmoy ≤ ${c.dmean} Gy</span>`;
+    if (eq) html += `<span class="cell-eq">${eq}</span>`;
+
+  } else if (c.crit) {
+    const eq = eqStr(c.crit.dose, fx, ab);
+    html += `<span class="cell-vol">${c.crit.vol}</span>`;
+    html += `<span class="cell-line">≤ ${c.crit.dose} Gy</span>`;
+    if (eq) html += `<span class="cell-eq">${eq}</span>`;
+    if (c.vdose) html += `<span class="cell-vol" style="margin-top:3px">${c.vdose}</span>`;
+
+  } else if (c.multi) {
+    c.multi.forEach(m => {
+      const eq = eqStr(m.dose, fx, ab);
+      html += `<div class="cell-multi-row">
+        <span class="cell-vol">${m.vol}</span>
+        <span class="cell-line">≤ ${m.dose} Gy</span>
+        ${eq?`<span class="cell-eq">${eq}</span>`:''}
+      </div>`;
+    });
+    if (c.dmax!=null) {
+      const eq = eqStr(c.dmax, fx, ab);
+      html += `<div class="cell-divider"></div>
+        <div class="cell-multi-row">
+          <span class="cell-vol">Dmax<sup style="font-size:7px">†</sup> (≤ 0.035 cm³)</span>
+          <span class="cell-line">${c.dmax} Gy</span>
+          ${eq?`<span class="cell-eq">${eq}</span>`:''}
+        </div>`;
+    }
+
+  } else {
+    // Standard serial: volMax + dmax
+    if (c.volMax) {
+      const eq = eqStr(c.volMax.dose, fx, ab);
+      html += `<span class="cell-vol">${c.volMax.vol}</span>`;
+      html += `<span class="cell-line">≤ ${c.volMax.dose} Gy</span>`;
+      if (eq) html += `<span class="cell-eq">${eq}</span>`;
+    }
+    if (c.dmax!=null) {
+      const eq = eqStr(c.dmax, fx, ab);
+      if (c.volMax) html += `<div class="cell-divider"></div>`;
+      html += `<span class="cell-vol">Dmax<sup style="font-size:7px">†</sup> (≤ 0.035 cm³)</span>`;
+      html += `<span class="cell-line">${c.dmax} Gy</span>`;
+      if (eq) html += `<span class="cell-eq">${eq}</span>`;
+    }
+  }
+
+  html += '</div>';
+  return html;
+}
+
+// ── CARDS ──
+function renderCards(oarArr, fxArr) {
+  const el = document.getElementById('result-cards');
+  el.innerHTML = '';
+
+  oarArr.forEach(oarId => {
+    const def = OAR_DEF[oarId];
+    const ab  = def.ab || 3;
+    const card = document.createElement('div');
+    card.className = 'oar-result-card';
+    if (def.type==='parallel') card.style.borderLeftColor = 'var(--purple)';
+
+    card.innerHTML = `
+      <div class="oar-card-header">
+        <div>
+          <div class="oar-card-name">${def.name}
+            <span class="tissue-badge ${def.type==='parallel'?'tissue-parallel':'tissue-serial'}">${def.type==='parallel'?'parallèle':'série'}</span>
+            ${ab===2?'<span class="ab-badge">α/β = 2 Gy</span>':'<span style="font-family:DM Mono,monospace;font-size:9px;color:var(--text3)"> α/β = 3 Gy</span>'}
+          </div>
+          <div class="oar-card-sub">${def.sub}</div>
+        </div>
+      </div>
+      <div class="oar-card-body" id="cardbody-${oarId}"></div>`;
+
+    const body = card.querySelector(`#cardbody-${oarId}`);
+
+    fxArr.forEach(fx => {
+      const c   = DATA[oarId]?.[fx];
+      const div = document.createElement('div');
+      div.className = 'fx-entry';
+      div.innerHTML = `<span class="fx-badge">${fx} fx</span>`;
+
+      const bodyDiv = document.createElement('div');
+      bodyDiv.className = 'fx-entry-body';
+
+      if (!c || c.note==='NR') {
+        bodyDiv.innerHTML = '<span class="fx-nr">NR — non renseigné pour ce fractionnement<sup style="font-size:7px">§</sup></span>';
+      } else if (c.note) {
+        bodyDiv.innerHTML = `<span class="fx-nr">${c.note}</span>`;
+      } else if (c.dmean !== undefined) {
+        const eq = eqStr(c.dmean, fx, ab);
+        bodyDiv.innerHTML = `<div class="fx-line">
+          <span class="fx-vol">Dose moyenne ≤</span>
+          <span class="fx-dose">${c.dmean} Gy</span>
+          ${eq?`<span class="eq-pill">${eq}</span>`:''}
+        </div>`;
+      } else if (c.crit) {
+        const eq = eqStr(c.crit.dose, fx, ab);
+        bodyDiv.innerHTML = `<div class="fx-line">
+          <span class="fx-vol">Vol. critique ${c.crit.vol}</span>
+          <span class="fx-dose">≤ ${c.crit.dose} Gy</span>
+          ${eq?`<span class="eq-pill">${eq}</span>`:''}
+        </div>
+        ${c.vdose?`<div class="fx-line"><span class="fx-vol">${c.vdose}</span></div>`:''}`;
+      } else if (c.multi) {
+        let h = '';
+        c.multi.forEach(m => {
+          const eq = eqStr(m.dose, fx, ab);
+          h += `<div class="fx-line">
+            <span class="fx-vol">${m.vol}</span>
+            <span class="fx-dose">≤ ${m.dose} Gy</span>
+            ${eq?`<span class="eq-pill">${eq}</span>`:''}
+          </div>`;
+        });
+        if (c.dmax!=null) {
+          const eq = eqStr(c.dmax, fx, ab);
+          h += `<div class="fx-line" style="margin-top:4px;padding-top:4px;border-top:1px solid var(--border2)">
+            <span class="fx-vol">Dmax<sup style="font-size:7px">†</sup> (≤ 0.035 cm³)</span>
+            <span class="fx-dose">${c.dmax} Gy</span>
+            ${eq?`<span class="eq-pill">${eq}</span>`:''}
+          </div>`;
+        }
+        bodyDiv.innerHTML = h;
+      } else {
+        let h = '';
+        if (c.volMax) {
+          const eq = eqStr(c.volMax.dose, fx, ab);
+          h += `<div class="fx-line">
+            <span class="fx-vol">${c.volMax.vol}</span>
+            <span class="fx-dose">≤ ${c.volMax.dose} Gy</span>
+            ${eq?`<span class="eq-pill">${eq}</span>`:''}
+          </div>`;
+        }
+        if (c.dmax!=null) {
+          const eq = eqStr(c.dmax, fx, ab);
+          h += `<div class="fx-line" ${c.volMax?'style="margin-top:4px;padding-top:4px;border-top:1px solid var(--border2)"':''}>
+            <span class="fx-vol">Dmax<sup style="font-size:7px">†</sup> (≤ 0.035 cm³)</span>
+            <span class="fx-dose">${c.dmax} Gy</span>
+            ${eq?`<span class="eq-pill">${eq}</span>`:''}
+          </div>`;
+        }
+        bodyDiv.innerHTML = h;
+      }
+
+      div.appendChild(bodyDiv);
+      body.appendChild(div);
+    });
+
+    el.appendChild(card);
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// VIEW TOGGLE
+// ═══════════════════════════════════════════════════════════════════
+function setView(v) {
+  currentView = v;
+  document.getElementById('btn-view-table').classList.toggle('active', v==='table');
+  document.getElementById('btn-view-cards').classList.toggle('active', v==='cards');
+  document.getElementById('view-table').style.display = v==='table'?'block':'none';
+  document.getElementById('view-cards').style.display = v==='cards'?'block':'none';
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// RESET & PRINT
+// ═══════════════════════════════════════════════════════════════════
+function resetAll() {
+  selectedRegion = null; selectedOARs = new Set(); selectedFX = new Set();
+  document.querySelectorAll('.region-btn,.fx-btn').forEach(b => b.classList.remove('selected'));
+  hide('step-oar-oars'); hide('step-oar-fx');
+  hide('results');
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+function printResult() {
+  document.getElementById('print-date').textContent = new Date().toLocaleDateString('fr-FR');
+  // Force table view for print
+  const prev = currentView;
+  setView('table');
+  window.print();
+  setView(prev);
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// UTILS
+// ═══════════════════════════════════════════════════════════════════
+function show(id){ const el=document.getElementById(id); if(el) el.style.display='block'; }
+function hide(id){ const el=document.getElementById(id); if(el) el.style.display='none'; }
+function scrollTo(id){ setTimeout(()=>{ const el=document.getElementById(id); if(el) el.scrollIntoView({behavior:'smooth',block:'start'}); },60); }
+
+// Cochlea 1–8 fx : dmax only, no volMax — handled in the standard else branch (c.dmax != null path).
+</script>
+</body>
+</html>
